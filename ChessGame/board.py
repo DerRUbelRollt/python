@@ -2,6 +2,8 @@ import pygame
 import os
 
 image_size = 100     # Größe der Figur
+tile_size = 100      # Größe eines Schachbrettfeldes
+offset = 0           # Offset für die Positionierung der Figuren (falls benötigt)
 
 
 # 8x8 Startposition des Schachbretts ("" = leer)
