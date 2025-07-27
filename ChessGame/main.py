@@ -73,6 +73,7 @@ def draw_pieces():
                 screen.blit(piece_images[piece], (col * tile_size, row * tile_size))
 
 # Hauptloop
+#To start the game python main.py
 game = True
 running = False
 mainMenu = True
