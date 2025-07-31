@@ -1,3 +1,4 @@
+
 # move_logic.py
 rank = ["P", "R", "N", "B", "Q", "K"]
 # move_logic.py
@@ -42,23 +43,23 @@ def get_pawn_moves(board, row, col, is_white, is_black):
                 moves.append((row + 1, col - 1))  
     return moves
 
-def get_rook_moves(board, row, col, is_white):
+def get_rook_moves(board, row, col, is_white, is_black):
     moves = []
     return moves
 
-def get_knight_moves(board, row, col, is_white):
+def get_knight_moves(board, row, col, is_white, is_black):
     moves = []
     return moves
 
-def get_bishop_moves(board, row, col, is_white):
+def get_bishop_moves(board, row, col, is_white, is_black):
     moves = []
     return moves
 
-def get_queen_moves(board, row, col, is_white):
+def get_queen_moves(board, row, col, is_white, is_black):
     moves = []
     return moves
 
-def get_king_moves(board, row, col, is_white):
+def get_king_moves(board, row, col, is_white, is_black):
     moves = []
     return moves
 
@@ -78,6 +79,8 @@ def get_valid_moves(piece, board, row, col):
     elif kind == "Q":
         return get_queen_moves(board, row, col, is_white , is_black)
     elif kind == "K":
+        
         return get_king_moves(board, row, col, is_white , is_black)
+    
     else:
         return []

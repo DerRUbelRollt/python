@@ -2,10 +2,12 @@
 selected_square = None
 from move_logic import get_valid_moves
 
+
+
 def handle_click(pos, board):
     global selected_square
     tile_size = 100
-    col = pos[0] // tile_size
+    col = pos[0] // tile_size 
     row = pos[1] // tile_size
 
     if selected_square is None:
@@ -23,3 +25,7 @@ def handle_click(pos, board):
             board[from_row][from_col] = ""
 
         selected_square = None
+
+def get_selected_square():
+    global selected_square
+    return selected_square

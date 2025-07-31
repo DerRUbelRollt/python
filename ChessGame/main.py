@@ -1,7 +1,7 @@
 import pygame
 import sys
 from board import board as start_board, load_images
-from gameLogic import handle_click
+from gameLogic import handle_click, get_selected_square
 
 
 # Pygame initialisieren
@@ -14,7 +14,7 @@ pygame.display.set_caption("Schachspiel")
 
 WHITE = (255, 255, 255)
 GRAY = (128, 128, 128)
-
+Dark_Gray = (50,50,50)  # Neue Farbe für Auswahl
 
 # Das Spielfeld als Kopie der Startposition initialisieren
 board = [row[:] for row in start_board]
@@ -58,10 +58,13 @@ def main_menu():
         pygame.display.flip()
 
 # Schachbrett zeichnen
-def draw_board():
+def draw_board(selected_square=None):
     for row in range(8):
         for col in range(8):
-            color = WHITE if (row + col) % 2 == 0 else GRAY
+            if selected_square == (row, col):
+                color = Dark_Gray
+            else:
+                color = WHITE if (row + col) % 2 == 0 else GRAY
             pygame.draw.rect(screen, color, (col * tile_size, row * tile_size, tile_size, tile_size))
 
 # Figuren zeichnen
@@ -93,7 +96,7 @@ while game:
                     mouse_pos = pygame.mouse.get_pos()
                     handle_click(mouse_pos, board)
 
-                draw_board()
+                draw_board(get_selected_square())
                 draw_pieces()
                 pygame.display.flip()
                 # Prüfen, ob beide Könige noch da sind
@@ -104,10 +107,6 @@ while game:
                     board = [row[:] for row in start_board]  # Board zurücksetzen (neue Kopie)
                     mainMenu = True
                     running = False
-                
-        
-    
-
 draw_board()
 draw_pieces()
 pygame.quit()
