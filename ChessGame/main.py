@@ -75,8 +75,8 @@ def main_menu():
         title_surf = font_big.render("Schachspiel", True, (255, 255, 255))
         screen.blit(title_surf, (screen.get_width() // 2 - title_surf.get_width() // 2, 120))
 
-        draw_button(start_button, "Spiel starten", (100, 100, 255), (70, 70, 200))
-        draw_button(bot_button, "Einfach", (100, 255, 100), (70, 200, 70))
+        draw_button(start_button, "Lokal 2 Player", (100, 100, 255), (70, 70, 200))
+        draw_button(bot_button, "Einfach (Bot)", (100, 255, 100), (70, 200, 70))
         draw_button(quit_button, "Beenden", (255, 100, 100), (200, 70, 70))
 
         pygame.display.flip()
