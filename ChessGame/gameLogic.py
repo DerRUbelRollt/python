@@ -1,6 +1,7 @@
 # Merkt sich, ob eine Figur ausgewählt wurde
 selected_square = None
-from move_logic import get_valid_moves
+from move_logic import get_legal_moves
+
 
 def handle_click(pos, board, current_player):
     global selected_square
@@ -23,7 +24,9 @@ def handle_click(pos, board, current_player):
         to_row, to_col = row, col
         piece = board[from_row][from_col]
 
-        valid_moves = get_valid_moves(piece, board, from_row, from_col)
+        valid_moves = get_legal_moves(piece, board, from_row, from_col, current_player[0])
+
+
 
         if (to_row, to_col) in valid_moves:
             board[to_row][to_col] = piece

@@ -1,3 +1,26 @@
+from copy import deepcopy
+from utils_functions import is_king_in_check  # Das brauchst du noch, siehe unten
+
+def get_legal_moves(piece, board, row, col, color):
+    valid_moves = get_valid_moves(piece, board, row, col)
+    legal_moves = []
+
+    for move in valid_moves:
+        test_board = deepcopy(board)
+
+        # Simuliere den Zug
+        target_row, target_col = move
+        test_board[target_row][target_col] = piece
+        test_board[row][col] = ""
+
+        # Prüfe, ob König nach dem Zug im Schach ist
+        if not is_king_in_check(test_board, color):
+            legal_moves.append(move)
+
+    return legal_moves
+
+
+
 def is_path_clear(board, from_row, from_col, to_row, to_col):
     delta_row = to_row - from_row
     delta_col = to_col - from_col
