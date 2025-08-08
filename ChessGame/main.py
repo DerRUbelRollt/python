@@ -2,11 +2,14 @@ import pygame
 import sys
 from board import board as start_board, load_images
 from gameLogic import handle_click, get_selected_square
+from bot_easy import get_bot_move
+
 
 
 # Pygame initialisieren
 pygame.init()
-
+current_player = "white"
+is_bot_game = False
 WIDTH, HEIGHT = 800, 800
 tile_size = WIDTH // 8
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -22,40 +25,59 @@ piece_images = load_images()
 
 # Hauptloop starten
 def main_menu():
-    global mainMenu
+    global mainMenu, current_player, is_bot_game
+
+    screen = pygame.display.set_mode((800, 800))
+    font_big = pygame.font.SysFont(None, 80)
+    font = pygame.font.SysFont(None, 50)
+
+    start_button = pygame.Rect(250, 300, 300, 60)
+    bot_button = pygame.Rect(250, 400, 300, 60)
+    quit_button = pygame.Rect(250, 500, 300, 60)
+
     while mainMenu:
+        screen.fill((20, 20, 20))
+        mouse_pos = pygame.mouse.get_pos()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
-                # Button "Spiel starten"
+                
                 if start_button.collidepoint(mouse_pos):
+                    current_player = "white"
+                    is_bot_game = False
                     mainMenu = False
-                    running = True
-                # Button "Beenden"
-                if quit_button.collidepoint(mouse_pos):
+
+                elif bot_button.collidepoint(mouse_pos):
+                    current_player = "white"
+                    is_bot_game = True
+                    mainMenu = False
+
+                elif quit_button.collidepoint(mouse_pos):
                     pygame.quit()
                     sys.exit()
 
-        screen.fill(WHITE)
-        font = pygame.font.Font(None, 74)
-        text = font.render("Schachspiel", True, (0, 0, 0))
-        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+        def draw_button(rect, text, hover_color, normal_color):
+            color = hover_color if rect.collidepoint(mouse_pos) else normal_color
+            pygame.draw.rect(screen, color, rect)
+            text_surf = font.render(text, True, (255, 255, 255))
+            screen.blit(text_surf, (rect.x + (rect.width - text_surf.get_width()) // 2,
+                                    rect.y + (rect.height - text_surf.get_height()) // 2))
 
-        # Buttons zeichnen
-        button_font = pygame.font.Font(None, 50)
-        start_button = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 2 + 100, 300, 60)
-        quit_button = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 2 + 200, 300, 60)
-        pygame.draw.rect(screen, GRAY, start_button)
-        pygame.draw.rect(screen, GRAY, quit_button)
-        start_text = button_font.render("Spiel starten", True, (0, 0, 0))
-        quit_text = button_font.render("Beenden", True, (0, 0, 0))
-        screen.blit(start_text, (start_button.x + 30, start_button.y + 10))
-        screen.blit(quit_text, (quit_button.x + 80, quit_button.y + 10))
+        title_surf = font_big.render("Schachspiel", True, (255, 255, 255))
+        screen.blit(title_surf, (screen.get_width() // 2 - title_surf.get_width() // 2, 120))
+
+        draw_button(start_button, "Spiel starten", (100, 100, 255), (70, 70, 200))
+        draw_button(bot_button, "Einfach", (100, 255, 100), (70, 200, 70))
+        draw_button(quit_button, "Beenden", (255, 100, 100), (200, 70, 70))
 
         pygame.display.flip()
+
+
 
 # Schachbrett zeichnen
 def draw_board(selected_square=None):
@@ -81,20 +103,32 @@ game = True
 running = False
 mainMenu = True
 while game:
-    while mainMenu:
-        main_menu()
-        if mainMenu == False:
-            running = True
-        while running:
-            for event in pygame.event.get():
-        
+    main_menu()  # blockiert, bis mainMenu == true
+
+    running = True
+    while running:
+        for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
-                    handle_click(mouse_pos, board)
+                    if handle_click(mouse_pos, board, current_player):
+                    # Nur wenn ein gültiger Zug gemacht wurde → Spieler wechseln
+                        if current_player == "white": 
+                            current_player = "black"
+                                # Wenn Bot-Spiel und schwarzer Spieler dran ist
+                            if is_bot_game and current_player == "black":
+                                pygame.time.delay(200)  # Kleine Pause für Bot-Zug
+                                move = get_bot_move(board, "black")
+                                if move:
+                                    (from_row, from_col), (to_row, to_col) = move
+                                    board[to_row][to_col] = board[from_row][from_col]
+                                    board[from_row][from_col] = ""
+                                    current_player = "white"
+                        else:
+                            current_player = "white"
 
                 draw_board(get_selected_square())
                 draw_pieces()
@@ -102,7 +136,10 @@ while game:
                 # Prüfen, ob beide Könige noch da sind
                 kings = [piece for row in board for piece in row if piece in ("wK", "bK")]
                 if "wK" not in kings or "bK" not in kings:
-                    print("Spiel beendet! Ein König fehlt.")
+                    if kings == ['wK']:
+                        print(f"Spiel beendet! WEIß gewinnt")
+                    else:
+                        print(f"Spiel beendet! SCHWARZ  gewinnt")
                     draw_pieces()
                     board = [row[:] for row in start_board]  # Board zurücksetzen (neue Kopie)
                     mainMenu = True
