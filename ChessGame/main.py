@@ -233,11 +233,21 @@ while game:
                             running = False
                     else:
                         if not has_legal_moves(board, current_player):
-                            print("Patt!")
-                            show_game_over_screen("Unentschieden")
-                            board = [row[:] for row in start_board]
-                            mainMenu = True
-                            running = False
+                            if is_king_in_check(board, current_player):
+                                print(f"Schachmatt! {'SCHWARZ' if current_player == 'white' else 'WEIß'} gewinnt!")
+                                if current_player == 'black':
+                                    show_game_over_screen("white")
+                                else:
+                                    show_game_over_screen("black")
+                                board = [row[:] for row in start_board]
+                                mainMenu = True
+                                running = False
+                            else:
+                                print("Patt!")
+                                show_game_over_screen("Unentschieden")
+                                board = [row[:] for row in start_board]
+                                mainMenu = True
+                                running = False
                         if insufficient_material(board):
                             show_game_over_screen("Unentschieden")
                             print("Remis – unzureichendes Material!")
