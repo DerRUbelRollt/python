@@ -1,21 +1,6 @@
 # bot.py
-
-import random
+from chess_ai import get_best_move
 from move_logic import get_legal_moves
 
 def get_bot_move(board, color):
-    # Finde alle möglichen Züge für den Bot
-    all_moves = []
-
-    for row in range(8):
-        for col in range(8):
-            piece = board[row][col]
-            if piece.startswith("b" if color == "black" else "w"):
-                valid_moves = get_legal_moves(piece, board, row, col, color)
-                for move in valid_moves:
-                    all_moves.append(((row, col), move))
-
-    if all_moves:
-        return random.choice(all_moves)  # Zufälliger Zug
-
-    return None  # Kein möglicher Zug
+    return get_best_move(board, color, get_legal_moves, depth=2)
