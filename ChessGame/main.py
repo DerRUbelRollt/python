@@ -4,7 +4,7 @@ from board import board as start_board, load_images
 from gameLogic import handle_click, get_selected_square
 from bot_easy import get_bot_move
 from move_logic import get_legal_moves
-from utils_functions import is_king_in_check
+from utils_functions import is_king_in_check, insufficient_material
 
 
 
@@ -12,7 +12,7 @@ from utils_functions import is_king_in_check
 pygame.font.init()
 clock = pygame.time.Clock()
 
-current_player = "white"
+
 is_bot_game = False
 WIDTH, HEIGHT = 800, 800
 tile_size = WIDTH // 8
@@ -143,8 +143,7 @@ def show_game_over_screen(winner_color):
     
     color_text = (0, 0, 0) if winner_color == "white" else (255, 255, 255)
     overlay_color = (255, 255, 255, 200) if winner_color == "white" else (0, 0, 0, 180)
-    winner_text = f"{winner_color.upper()} gewinnt!"
-
+    winner_text = f"{winner_color.upper()}!" if winner_color == "Unentschieden" else f"{winner_color.upper()} gewinnt!"
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -234,10 +233,18 @@ while game:
                             running = False
                     else:
                         if not has_legal_moves(board, current_player):
-                            print("Patt! Unentschieden!")
+                            print("Patt!")
+                            show_game_over_screen("Unentschieden")
                             board = [row[:] for row in start_board]
                             mainMenu = True
                             running = False
+                        if insufficient_material(board):
+                            show_game_over_screen("Unentschieden")
+                            print("Remis – unzureichendes Material!")
+                            board = [row[:] for row in start_board]
+                            mainMenu = True
+                            running = False
+
 draw_board()
 draw_pieces()
 pygame.quit()

@@ -51,10 +51,15 @@ def get_valid_moves(piece, board, row, col):
         # Ein Schritt vor
         if 0 <= row + direction < 8 and board[row + direction][col] == "":
             moves.append((row + direction, col))
+            
             # Zwei Schritte vom Startfeld
             if (color == "w" and row == 6) or (color == "b" and row == 1):
                 if board[row + 2*direction][col] == "":
                     moves.append((row + 2*direction, col))
+        if (color == "w" and row == 0): 
+            board[row][col] = "wQ"
+        if (color == "b" and row == 7):
+            board[row][col] = "bQ"
         # Schlagen
         for dc in [-1, 1]:
             new_col = col + dc
