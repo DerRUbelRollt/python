@@ -50,11 +50,11 @@ def main_menu(screen, background):
                     return False, True, "white"
                 elif host_button.collidepoint(mouse_pos):
                     network_socket = start_server()
-                    return False, False, {"mode": "host", "socket": network_socket}
+                    return False, False, {"mode": "host", "socket": network_socket, "color": "white"}
                 elif client_button.collidepoint(mouse_pos):
                     ip = input("IP des Hosts: ")
                     network_socket = connect_to_server(ip)
-                    return False, False, {"mode": "client", "socket": network_socket}
+                    return False, False, {"mode": "client", "socket": network_socket, "color": "black"}
 
 
                 elif quit_button.collidepoint(mouse_pos):
