@@ -15,6 +15,10 @@ def get_all_attacked_squares(board, by_color):
 
 
 def is_king_in_check(board, color):
+    if isinstance(color, dict):
+        color = color['color']
+    
+    print(f"was ist color => {color}")
     if  color == "white":
         enemy_color = "b"
         king_piece = "wK"
