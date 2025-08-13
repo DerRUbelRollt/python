@@ -24,6 +24,14 @@ def evaluate_board(board):
                     score -= value
     return score
 
+def is_castling_move(piece, start, end):
+    # König zieht 2 Felder horizontal
+    if piece[1].upper() == "K" and start[0] == end[0] and abs(start[1] - end[1]) == 2:
+        return True
+    return False
+
+
+
 def minimax(board, depth, alpha, beta, maximizing_player, color, get_legal_moves_fn):
     if depth == 0:
         return evaluate_board(board), None
@@ -49,6 +57,19 @@ def minimax(board, depth, alpha, beta, maximizing_player, color, get_legal_moves
             (sr, sc), (er, ec) = move
             new_board[er][ec] = new_board[sr][sc]
             new_board[sr][sc] = ""
+
+            # Rochade-Turmzug prüfen und ausführen
+            if is_castling_move(new_board[er][ec], (sr, sc), (er, ec)):
+                row = er
+                # kurze Rochade (König zieht 2 Felder nach rechts)
+                if ec == 6:
+                    new_board[row][5] = new_board[row][7]
+                    new_board[row][7] = ""
+                # lange Rochade (König zieht 2 Felder nach links)
+                elif ec == 2:
+                    new_board[row][3] = new_board[row][0]
+                    new_board[row][0] = ""
+
             eval_score, _ = minimax(new_board, depth - 1, alpha, beta, False, color, get_legal_moves_fn)
             if eval_score > max_eval:
                 max_eval = eval_score
@@ -64,6 +85,18 @@ def minimax(board, depth, alpha, beta, maximizing_player, color, get_legal_moves
             (sr, sc), (er, ec) = move
             new_board[er][ec] = new_board[sr][sc]
             new_board[sr][sc] = ""
+            
+            # Rochade-Turmzug prüfen und ausführen
+            if is_castling_move(new_board[er][ec], (sr, sc), (er, ec)):
+                row = er
+                # kurze Rochade (König zieht 2 Felder nach rechts)
+                if ec == 6:
+                    new_board[row][5] = new_board[row][7]
+                    new_board[row][7] = ""
+                # lange Rochade (König zieht 2 Felder nach links)
+                elif ec == 2:
+                    new_board[row][3] = new_board[row][0]
+                    new_board[row][0] = ""
             eval_score, _ = minimax(new_board, depth - 1, alpha, beta, True, color, get_legal_moves_fn)
             if eval_score < min_eval:
                 min_eval = eval_score

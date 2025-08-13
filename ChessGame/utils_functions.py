@@ -63,3 +63,4 @@ def insufficient_material(board):
         return True
 
     return False
+

@@ -1,6 +1,7 @@
 from copy import deepcopy
 from utils_functions import is_king_in_check  # Das brauchst du noch, siehe unten
 
+
 def get_legal_moves(piece, board, row, col, color):
     valid_moves = get_valid_moves(piece, board, row, col)
     legal_moves = []
@@ -38,6 +39,7 @@ def is_path_clear(board, from_row, from_col, to_row, to_col):
 
 
 def get_valid_moves(piece, board, row, col):
+    
     if piece == "":
         return []
 
@@ -135,6 +137,8 @@ def get_valid_moves(piece, board, row, col):
                         break
 
     elif name == "K":  # König
+        from gameLogic import get_rochade_valid
+        # Normale Königszüge
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
                 if dr == 0 and dc == 0:
@@ -144,5 +148,21 @@ def get_valid_moves(piece, board, row, col):
                     target = board[r][c]
                     if target == "" or target[0] != color:
                         moves.append((r, c))
+
+        # Rochade prüfen (nur wenn König auf Startfeld ist, und wenn du Flags hast: König und Türme noch nicht bewegt)
+        if get_rochade_valid(color) == 0 and ((color == "w" and row == 7 and col == 4) or (color == "b" and row == 0 and col == 4)):
+            rook_row = 7 if color == "w" else 0
+
+            # Kurze Rochade
+            if board[rook_row][7] == color + "R" and board[rook_row][5] == "" and board[rook_row][6] == "":
+                # Hier solltest du prüfen, ob König in Schach ist oder die Felder (4,5,6) vom König bedroht sind
+                moves.append((rook_row, 6))
+
+            # Lange Rochade
+            if board[rook_row][0] == color + "R" and board[rook_row][1] == "" and board[rook_row][2] == "" and board[rook_row][3] == "":
+                # Gleiches mit Schachprüfung wie oben
+                moves.append((rook_row, 2))
+
+
 
     return moves
