@@ -76,7 +76,7 @@ def has_legal_moves(board, color):
     for row in range(8):
         for col in range(8):
             piece = board[row][col]
-            if piece != "" and piece.startswith(color[0]):
+            if piece != "" and piece.startswith(color['color'][0]):
                 legal_moves = get_legal_moves(piece, board, row, col, color)
                 if legal_moves:
                     return True
@@ -168,6 +168,7 @@ while game:
                             mainMenu = True
                             running = False
                     else:
+                        current_color = current_player['color'] 
                         if not has_legal_moves(board, current_player):
                             if is_king_in_check(board, current_player):
                                 print(f"Schachmatt! {'SCHWARZ' if current_player == 'white' else 'WEIß'} gewinnt!")
