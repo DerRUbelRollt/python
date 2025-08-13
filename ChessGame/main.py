@@ -110,7 +110,7 @@ while game:
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
-                    if handle_click(mouse_pos, board, current_player):
+                    if handle_click(mouse_pos, board, current_player['color']):
                         draw_board(get_selected_square())
                         draw_pieces()
                         pygame.display.flip()
