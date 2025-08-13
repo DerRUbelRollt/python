@@ -26,8 +26,9 @@ def handle_click(pos, board, current_player):
         from_row, from_col = selected_square
         to_row, to_col = row, col
         piece = board[from_row][from_col]
-
-        valid_moves = get_legal_moves(piece, board, from_row, from_col, current_player['color'])
+        print("1current_player:", current_player)
+        print("1type:", type(current_player))
+        valid_moves = get_legal_moves(piece, board, from_row, from_col, current_player)
 
         if (to_row, to_col) in valid_moves:
             # Rochade-Erkennung nur für König
