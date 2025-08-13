@@ -1,3 +1,5 @@
+import random
+
 def get_all_attacked_squares(board, by_color):
     from move_logic import get_valid_moves
     attacked = set()
@@ -13,14 +15,14 @@ def get_all_attacked_squares(board, by_color):
 
 
 def is_king_in_check(board, color):
-    if color == "w" or color == "white":
+    color = random.choice(["white", "black"])
+    if  color == "white":
         enemy_color = "b"
         king_piece = "wK"
-    elif color == "b" or color == "black":
+    elif color == "black":
         enemy_color = "w"
         king_piece = "bK"
-    else:
-        raise ValueError(f"Unbekannter Spieler: {color}")
+        
     king_pos = None
 
     # Finde den König
