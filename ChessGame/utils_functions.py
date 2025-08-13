@@ -16,9 +16,11 @@ def is_king_in_check(board, color):
     if color == "w" or color == "white":
         enemy_color = "b"
         king_piece = "wK"
-    if color == "b" or color == "black":
+    elif color == "b" or color == "black":
         enemy_color = "w"
         king_piece = "bK"
+    else:
+        raise ValueError(f"Unbekannter Spieler: {color}")
     king_pos = None
 
     # Finde den König
