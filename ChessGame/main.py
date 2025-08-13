@@ -158,7 +158,7 @@ while game:
                     running = False
                 else:
                     # Neuer Check für Schachmatt / Patt
-                    if is_king_in_check(board, current_player["color"]):
+                    if is_king_in_check(board, current_player):
                         print(f"check current player => {current_player}")
                         if not has_legal_moves(board, current_player):
                             pygame.time.delay(800)  # Kleine Pause für Bot-Zug
