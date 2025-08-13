@@ -73,17 +73,18 @@ def draw_pieces():
                 
 def has_legal_moves(board, color):
     # Prüfe für jede Figur von `color`, ob es legalen Zug gibt
-    if color != "white" | "black":
+    if isinstance(color, dict):  # falls doch ein Dictionary übergeben wurde
         color = color['color']
     
     for row in range(8):
         for col in range(8):
             piece = board[row][col]
-            if piece != "" and piece.startswith(color['color'][0]):
+            if piece != "" and piece.startswith(color[0]):
                 legal_moves = get_legal_moves(piece, board, row, col, color)
                 if legal_moves:
                     return True
     return False
+
 
 # Hauptloop
 #To start the game python main.py
