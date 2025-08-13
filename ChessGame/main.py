@@ -173,8 +173,9 @@ while game:
                             mainMenu = True
                             running = False
                     else:
-                        current_player = current_player['color'] 
+                        print(f"current_player => {current_player}")
                         if not has_legal_moves(board, current_player):
+                            print(f"2current_player => {current_player}")
                             if is_king_in_check(board, current_player):
                                 print(f"Schachmatt! {'SCHWARZ' if current_player == 'white' else 'WEIß'} gewinnt!")
                                 if current_player == 'black':
