@@ -1,14 +1,29 @@
 import pygame
 import sys
+import subprocess
+from server import start_server
+from client import connect_to_server
+from network import send_move, receive_move
+
+network_socket = None
+
+def start_host():
+    subprocess.Popen(["python", "network_server.py"])
+
+def start_client():
+    subprocess.Popen(["python", "network_client.py"])
+
 
 def main_menu(screen, background):
     font_big = pygame.font.SysFont(None, 80)
     font = pygame.font.SysFont(None, 50)
 
-    start_button = pygame.Rect(250, 300, 300, 60)
-    bot_button_b = pygame.Rect(250, 400, 300, 60)
-    bot_button_e = pygame.Rect(250, 500, 300, 60)
-    quit_button = pygame.Rect(250, 600, 300, 60)
+    host_button = pygame.Rect(250, 200, 300, 60)
+    client_button = pygame.Rect(250, 300, 300, 60)
+    start_button = pygame.Rect(250, 400, 300, 60)
+    bot_button_b = pygame.Rect(250, 500, 300, 60)
+    bot_button_e = pygame.Rect(250, 600, 300, 60)
+    quit_button = pygame.Rect(250, 700, 300, 60)
 
     while True:
         # Hintergrund: letztes Spielfeld
@@ -32,6 +47,14 @@ def main_menu(screen, background):
                     return True, False, "white"
                 elif bot_button_e.collidepoint(mouse_pos):
                     return False, True, "white"
+                elif host_button.collidepoint(mouse_pos):
+                    network_socket = start_server()
+                    return False, False, "white", network_socket
+                elif client_button.collidepoint(mouse_pos):
+                    ip = input("IP des Hosts: ")
+                    network_socket = connect_to_server(ip)
+                    return False, False, "black", network_socket
+
                 elif quit_button.collidepoint(mouse_pos):
                     pygame.quit()
                     sys.exit()
@@ -47,7 +70,9 @@ def main_menu(screen, background):
 
         title_surf = font_big.render("Schachspiel", True, (255, 255, 255))
         screen.blit(title_surf, (screen.get_width() // 2 - title_surf.get_width() // 2, 120))
-
+        
+        draw_button(host_button, "Host-Spiel", (100, 100, 255), (70, 70, 200))
+        draw_button(client_button, "Spiel beitreten", (100, 100, 255), (70, 70, 200))
         draw_button(start_button, "Lokal 2 Player", (100, 100, 255), (70, 70, 200))
         draw_button(bot_button_b, "KI  BEGINNER", (100, 255, 100), (70, 200, 70))
         draw_button(bot_button_e, "KI  EXPERT", (100, 255, 100), (70, 200, 70))

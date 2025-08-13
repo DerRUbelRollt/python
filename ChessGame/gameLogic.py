@@ -1,7 +1,9 @@
 # Merkt sich, ob eine Figur ausgewählt wurde
 selected_square = None
 from move_logic import get_legal_moves
+from network import send_move, receive_move
 
+network_socket = None
 rochade_valid_w = 0
 rochade_valid_b = 0
 
@@ -58,6 +60,16 @@ def handle_click(pos, board, current_player):
             # König ziehen (auch normale Züge)
             board[to_row][to_col] = piece
             board[from_row][from_col] = ""
+            move_str = f"{from_row}{from_col}{to_row}{to_col}"
+            if network_socket:
+                send_move(network_socket, move_str)
+            if network_socket and current_player == "black":  # Beispiel: Gegner ist Weiß
+                move_str = receive_move(network_socket)
+                if move_str:
+                    fr, fc, tr, tc = map(int, list(move_str))
+                    board[tr][tc] = board[fr][fc]
+                    board[fr][fc] = ""
+
             selected_square = None
             return True
         else:
