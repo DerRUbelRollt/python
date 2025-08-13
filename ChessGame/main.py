@@ -73,6 +73,9 @@ def draw_pieces():
                 
 def has_legal_moves(board, color):
     # Prüfe für jede Figur von `color`, ob es legalen Zug gibt
+    if color != "white" | "black":
+        color = color['color']
+    
     for row in range(8):
         for col in range(8):
             piece = board[row][col]
@@ -154,7 +157,8 @@ while game:
                     running = False
                 else:
                     # Neuer Check für Schachmatt / Patt
-                    if is_king_in_check(board, current_player):
+                    if is_king_in_check(board, current_player["color"]):
+                        print(f"check current player => {current_player}")
                         if not has_legal_moves(board, current_player):
                             pygame.time.delay(800)  # Kleine Pause für Bot-Zug
                             print(f"Schachmatt! {'SCHWARZ' if current_player == 'white' else 'WEIß'} gewinnt!")
@@ -168,7 +172,7 @@ while game:
                             mainMenu = True
                             running = False
                     else:
-                        current_color = current_player['color'] 
+                        current_player = current_player['color'] 
                         if not has_legal_moves(board, current_player):
                             if is_king_in_check(board, current_player):
                                 print(f"Schachmatt! {'SCHWARZ' if current_player == 'white' else 'WEIß'} gewinnt!")

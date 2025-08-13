@@ -15,7 +15,6 @@ def get_all_attacked_squares(board, by_color):
 
 
 def is_king_in_check(board, color):
-    color = color['color']
     if  color == "white":
         enemy_color = "b"
         king_piece = "wK"
