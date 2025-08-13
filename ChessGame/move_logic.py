@@ -37,6 +37,16 @@ def is_path_clear(board, from_row, from_col, to_row, to_col):
         col += step_col
     return True
 
+def apply_move(board, move):
+    """
+    Wendet einen Zug auf dem Board an.
+    move: ((from_row, from_col), (to_row, to_col))
+    """
+    (from_row, from_col), (to_row, to_col) = move
+    piece = board[from_row][from_col]
+    board[to_row][to_col] = piece
+    board[from_row][from_col] = ""
+
 
 def get_valid_moves(piece, board, row, col):
     
