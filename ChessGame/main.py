@@ -92,8 +92,15 @@ while game:
     draw_pieces()
     pygame.display.flip()
     last_game_surface = screen.copy()
-    is_bot_b_game,is_bot_e_game, current_player = main_menu(screen, last_game_surface)  # blockiert, bis mainMenu == true
+    is_bot_b_game, is_bot_e_game, current_player = main_menu(screen, last_game_surface)
 
+    if isinstance(current_player, dict):
+        if current_player["mode"] == "host":
+            network_socket = current_player["socket"]
+            # Hier Host-Logik starten
+        elif current_player["mode"] == "client":
+            network_socket = current_player["socket"]
+            # Hier Client-Logik starten
     running = True
     while running:
         for event in pygame.event.get():
