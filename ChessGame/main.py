@@ -1,5 +1,7 @@
 import pygame
 import sys
+import threading
+from network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves
 
 from network import receive_move, send_move
 from board import board as start_board, load_images
@@ -26,6 +28,45 @@ Dark_Gray = (50, 50, 50)  # Auswahlfarbe
 # Das Spielfeld als Kopie der Startposition initialisieren
 board = [row[:] for row in start_board]
 piece_images = load_images()
+
+
+
+def main_game(is_host, server_ip=None):
+    global current_player
+    
+    # Netzwerkverbindung aufbauen
+    if is_host:
+        conn = start_server()
+    else:
+        conn = connect_to_server(server_ip)
+
+    # Thread für Eingehende Moves starten
+    threading.Thread(target=listen_for_moves, args=(conn,), daemon=True).start()
+
+    # ---- Dein pygame-Loop ----
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and current_player == "white":
+                mouse_pos = pygame.mouse.get_pos()
+                move = ("white", mouse_pos)
+                send_move(conn, move)   # an Gegner senden
+                current_player = "black"
+
+        # Prüfen ob vom Gegner was kam
+        while not incoming_moves.empty():
+            move = incoming_moves.get()
+            print("Verarbeite gegnerischen Move:", move)
+            # hier board aktualisieren
+            current_player = "white"
+
+        # Bildschirm neu zeichnen (Board etc.)
+        pygame.display.flip()
+
+    conn.close()
 
 def draw_board(selected_square=None, current_turn="white"):
     valid_moves = []
@@ -90,9 +131,12 @@ while game:
         network_socket = menu_result.get("socket")
         player_color = menu_result.get("color")  # z.B. "white" für Host, "black" für Client
         # Im Multiplayer beginnt immer Weiß (Host) — turn bleibt "white"
+        threading.Thread(target=listen_for_moves, args=(network_socket,), daemon=True).start()
     else:
         # Lokalmodus oder Botmodus: menu_result == "white" (spielerfarbe irrelevant, turn="white")
-        mode = "local"
+        mode = "local"    
+        my_color = None
+        network_socket = None
 
     running = True
     # Spielschleife
