@@ -1,7 +1,7 @@
 import socket
 import pickle
 
-def start_server(host="127.0.0.1", port=5005):
+def start_server(host="0.0.0.0", port=5005):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen()
@@ -9,6 +9,7 @@ def start_server(host="127.0.0.1", port=5005):
 
     conn, addr = server_socket.accept()
     print(f"[SERVER] Verbunden mit {addr}")
+
 
     # Schleife für Nachrichten
     try:

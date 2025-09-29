@@ -20,13 +20,19 @@ if __name__ == "__main__":
 
     try:
         while True:
-            msg = input("Nachricht an Server senden: ")
-            send_move(conn, msg)
+            # Spielerzug eingeben
+            move = input("Dein Zug (z. B. e2e4, 'exit' zum Beenden): ")
+            if move.lower() == "exit":
+                print("[CLIENT] Verbindung beendet.")
+                break
+
+            send_move(conn, move)
 
             # Antwort vom Server empfangen
-            reply = receive_move(conn)
-            print(f"[CLIENT] Antwort vom Server: {reply}")
+            response = receive_move(conn)
+            print(f"[CLIENT] Server sagt: {response}")
+
     except KeyboardInterrupt:
-        print("[CLIENT] Verbindung beendet.")
+        print("\n[CLIENT] Beendet durch Benutzer.")
     finally:
         conn.close()
