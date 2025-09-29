@@ -4,7 +4,7 @@ import os
 
 # Engine starten
 stockfish = Stockfish(
-    path=os.path.join("engines", "stockfish.exe"),  # Pfad anpassen
+    path=os.path.join("engines", "stockfish"),  # Pfad anpassen
     depth=20  # Tiefe für Master-Level
 )
 stockfish.set_skill_level(20)  # 0-20 (Master = 20)
