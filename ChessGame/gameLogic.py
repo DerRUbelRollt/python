@@ -2,11 +2,16 @@
 selected_square = None
 from move_logic import get_legal_moves, apply_move
 
+tile_size = 100
+board_offset_x = 200
+
 def handle_click(pos, board, current_player):
     global selected_square
-    tile_size = 100
-    col = pos[0] // tile_size 
+    col = (pos[0] - board_offset_x) // tile_size 
     row = pos[1] // tile_size
+
+    if col < 0 or col > 7 or row < 0 or row > 7:
+        return None  # Klick außerhalb des Boards
 
     # Falls noch keine Figur ausgewählt
     if selected_square is None:

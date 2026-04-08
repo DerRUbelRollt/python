@@ -4,28 +4,33 @@ import threading
 from Network.network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves
 from board import board as start_board, load_images
 from gameLogic import handle_click, get_selected_square
-from bots import get_bot_b_move
-from move_logic import get_legal_moves
+from bots import get_bot_b_move, get_bot_a_move
+from move_logic import get_legal_moves, apply_move, check_promotion, promote_pawn
 from utils_functions import is_king_in_check, insufficient_material
 from main_menu import main_menu
 from lose_win_screen import show_game_over_screen
-from move_logic import apply_move
 
 # Pygame initialisieren
 pygame.font.init()
 clock = pygame.time.Clock()
-WIDTH, HEIGHT = 800, 800
-tile_size = WIDTH // 8
+WIDTH, HEIGHT = 1200, 800
+board_offset_x = 200
+board_size = 800
+tile_size = board_size // 8
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Schachspiel")
 
-WHITE = (255, 255, 255)
-GRAY = (128, 128, 128)
+WHITE = (240, 217, 181)  # Hellbraun für helle Felder
+GRAY = (181, 136, 99)   # Dunkelbraun für dunkle Felder
 Dark_Gray = (50, 50, 50)  # Auswahlfarbe
 
 # Das Spielfeld als Kopie der Startposition initialisieren
 board = [row[:] for row in start_board]
 piece_images = load_images()
+
+# Geschlagene Figuren
+captured_white = []
+captured_black = []
 
 
 
@@ -80,20 +85,128 @@ def draw_board(selected_square=None, current_turn="white"):
             color = WHITE if (r + c) % 2 == 0 else GRAY
             if selected_square == (r, c):
                 color = Dark_Gray
-            pygame.draw.rect(screen, color, (c * tile_size, r * tile_size, tile_size, tile_size))
+            pygame.draw.rect(screen, color, (board_offset_x + c * tile_size, r * tile_size, tile_size, tile_size))
 
             if (r, c) in valid_moves:
                 highlight_color = (10, 190, 180, 80)
                 highlight_surface = pygame.Surface((tile_size, tile_size), pygame.SRCALPHA)
                 highlight_surface.fill(highlight_color)
-                screen.blit(highlight_surface, (c * tile_size, r * tile_size))
+                screen.blit(highlight_surface, (board_offset_x + c * tile_size, r * tile_size))
 
 def draw_pieces():
     for r in range(8):
         for c in range(8):
             piece = board[r][c]
             if piece != "":
-                screen.blit(piece_images[piece], (c * tile_size, r * tile_size))
+                screen.blit(piece_images[piece], (board_offset_x + c * tile_size, r * tile_size))
+
+def draw_captured_pieces():
+    # Fülle die Seitenbereiche mit hellbraun
+    side_color = WHITE  # Hellbraun
+    pygame.draw.rect(screen, side_color, (0, 0, board_offset_x, HEIGHT))  # Linke Seite
+    pygame.draw.rect(screen, side_color, (board_offset_x + board_size, 0, WIDTH - (board_offset_x + board_size), HEIGHT))  # Rechte Seite
+
+    small_size = 50
+    left_x = 50
+    right_x = WIDTH - 50 - small_size
+    y_start = 50
+
+    for i, piece in enumerate(captured_white):
+        if piece in piece_images:
+            img = pygame.transform.scale(piece_images[piece], (small_size, small_size))
+            screen.blit(img, (left_x, y_start + i * (small_size + 10)))
+
+    for i, piece in enumerate(captured_black):
+        if piece in piece_images:
+            img = pygame.transform.scale(piece_images[piece], (small_size, small_size))
+            screen.blit(img, (right_x, y_start + i * (small_size + 10)))
+
+def draw_board_border(current_turn):
+    # Dicker farbiger Rand um das Brett, der anzeigt wer am Zug ist
+    if current_turn == "white":
+        border_color = (0, 255, 0)  # Grün für Weiß
+    else:
+        border_color = (255, 0, 0)  # Rot für Schwarz
+    
+    border_width = 8  # Dicker Rand für bessere Sichtbarkeit
+    # Zeichne den Rand um das Brett, leicht versetzt um den Rand zu erweitern
+    pygame.draw.rect(screen, border_color, (board_offset_x - border_width//2, -border_width//2, board_size + border_width, board_size + border_width), border_width)
+
+def show_promotion_dialog(screen, color):
+    """
+    Zeigt ein kleines Dialog-Fenster mit den 4 Promotion-Optionen als Bilder in 2x2 Grid.
+    Gibt die gewählte Figur zurück: "Q", "R", "N" oder "B"
+    Layout:
+    Dame  | Turm
+    ------+------
+    Läufer| Springer
+    """
+    font_title = pygame.font.SysFont(None, 40)
+    
+    # Kleineres Dialog-Fenster
+    dialog_width = 300
+    dialog_height = 320
+    dialog_x = (WIDTH - dialog_width) // 2
+    dialog_y = (HEIGHT - dialog_height) // 2
+    
+    # 2x2 Grid mit Buttons
+    button_size = 100
+    button_spacing = 10
+    grid_start_x = dialog_x + 25
+    grid_start_y = dialog_y + 70
+    
+    # Promotion-Optionen im 2x2 Format: (Figur-Code, x, y)
+    promotion_pieces = [
+        (color + "Q", grid_start_x, grid_start_y),                                      # Dame (oben links)
+        (color + "R", grid_start_x + button_size + button_spacing, grid_start_y),       # Turm (oben rechts)
+        (color + "B", grid_start_x, grid_start_y + button_size + button_spacing),       # Läufer (unten links)
+        (color + "N", grid_start_x + button_size + button_spacing, grid_start_y + button_size + button_spacing)  # Springer (unten rechts)
+    ]
+    
+    selecting = True
+    choice = None
+    
+    while selecting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                for piece_code, x, y in promotion_pieces:
+                    button_rect = pygame.Rect(x, y, button_size, button_size)
+                    if button_rect.collidepoint(mouse_pos):
+                        choice = piece_code[1]  # Extrahiere Figur-Typ (Q, R, B, N)
+                        selecting = False
+        
+        # Zeichne Dialog-Hintergrund
+        pygame.draw.rect(screen, (200, 200, 200), (dialog_x, dialog_y, dialog_width, dialog_height))
+        pygame.draw.rect(screen, (0, 0, 0), (dialog_x, dialog_y, dialog_width, dialog_height), 3)
+        
+        # Titel
+        title_surf = font_title.render("Umwandeln:", True, (0, 0, 0))
+        screen.blit(title_surf, (dialog_x + (dialog_width - title_surf.get_width()) // 2, dialog_y + 15))
+        
+        # Figur-Buttons mit Bildern in 2x2 Grid
+        mouse_pos = pygame.mouse.get_pos()
+        for piece_code, x, y in promotion_pieces:
+            button_rect = pygame.Rect(x, y, button_size, button_size)
+            is_hovered = button_rect.collidepoint(mouse_pos)
+            button_color = (150, 200, 150) if is_hovered else (100, 180, 100)
+            
+            # Button-Hintergrund
+            pygame.draw.rect(screen, button_color, button_rect)
+            pygame.draw.rect(screen, (0, 0, 0), button_rect, 3 if is_hovered else 2)
+            
+            # Figur-Bild
+            if piece_code in piece_images:
+                piece_img = pygame.transform.scale(piece_images[piece_code], (button_size - 20, button_size - 20))
+                screen.blit(piece_img, (x + 10, y + 10))
+        
+        pygame.display.flip()
+        clock.tick(60)
+    
+    return choice
 
 def has_legal_moves(board_state, color):
     if isinstance(color, dict):
@@ -113,9 +226,11 @@ game = True
 while game:
     # Reset board zu Spielstart
     board = [row[:] for row in start_board]
+    captured_white = []
+    captured_black = []
     # Zeige Menü und erhalte Modus
     last_game_surface = screen.copy()
-    is_bot_game, menu_result = main_menu(screen, last_game_surface)
+    is_bot_game, bot_type, menu_result = main_menu(screen, last_game_surface)
 
     # Initialwerte
     network_socket = None
@@ -156,7 +271,23 @@ while game:
 
                 print("[NETWORK] Gegnerzug:", move)
 
+                # Track captured
+                (fr, fc), (tr, tc) = move
+                captured = board[tr][tc] if board[tr][tc] != "" else None
+
                 apply_move(board, move)
+
+                # Prüfe Promotion
+                needs_promotion, pawn_color = check_promotion(board, tr, tc)
+                if needs_promotion:
+                    promotion_choice = show_promotion_dialog(screen, pawn_color)
+                    promote_pawn(board, tr, tc, promotion_choice)
+
+                if captured:
+                    if turn == "white":
+                        captured_black.append(captured)
+                    else:
+                        captured_white.append(captured)
 
                 turn = "black" if turn == "white" else "white"
 
@@ -170,8 +301,24 @@ while game:
                         if move:
                             print("[NETWORK] Sende Zug:", move)
 
+                            # Track captured
+                            (fr, fc), (tr, tc) = move
+                            captured = board[tr][tc] if board[tr][tc] != "" else None
+
                             # Lokalen Zug anwenden
                             apply_move(board, move)
+
+                            # Prüfe Promotion (für Spieler)
+                            needs_promotion, pawn_color = check_promotion(board, tr, tc)
+                            if needs_promotion:
+                                promotion_choice = show_promotion_dialog(screen, pawn_color)
+                                promote_pawn(board, tr, tc, promotion_choice)
+
+                            if captured:
+                                if turn == "white":
+                                    captured_white.append(captured)
+                                else:
+                                    captured_black.append(captured)
 
                             # Senden
                             send_move(network_socket, move)
@@ -187,7 +334,24 @@ while game:
                     mouse_pos = pygame.mouse.get_pos()
                     move = handle_click(mouse_pos, board, turn)
                     if move:
+                        # Track captured
+                        (fr, fc), (tr, tc) = move
+                        captured = board[tr][tc] if board[tr][tc] != "" else None
+
                         apply_move(board, move)
+
+                        # Prüfe Promotion
+                        needs_promotion, pawn_color = check_promotion(board, tr, tc)
+                        if needs_promotion:
+                            promotion_choice = show_promotion_dialog(screen, pawn_color)
+                            promote_pawn(board, tr, tc, promotion_choice)
+
+                        if captured:
+                            if turn == "white":
+                                captured_white.append(captured)
+                            else:
+                                captured_black.append(captured)
+
                         draw_board(get_selected_square(), current_turn=turn)
                         draw_pieces()
                         pygame.display.flip()
@@ -199,20 +363,34 @@ while game:
                         # Bot-Logic: wenn Bot-Spiel aktiv und Bot ist dran (schwarz)
                         if turn == "black" and is_bot_game:
                             
-                            move = get_bot_b_move(board, "black")
+                            if bot_type == "advanced":
+                                move = get_bot_a_move(board, "black")
+                            else:
+                                move = get_bot_b_move(board, "black")
+                            
                             if move:
                                 (fr, fc), (tr, tc) = move
+                                captured = board[tr][tc] if board[tr][tc] != "" else None
+
                                 board[tr][tc] = board[fr][fc]
                                 board[fr][fc] = ""
-                                turn = "white"
-                                (fr, fc), (tr, tc) = move
-                                board[tr][tc] = board[fr][fc]
-                                board[fr][fc] = ""
+
+                                # Prüfe Promotion
+                                needs_promotion, pawn_color = check_promotion(board, tr, tc)
+                                if needs_promotion:
+                                    promotion_choice = show_promotion_dialog(screen, pawn_color)
+                                    promote_pawn(board, tr, tc, promotion_choice)
+                                
+                                if captured:
+                                    captured_black.append(captured)
+
                                 turn = "white"
                 
         # Drawing
         draw_board(get_selected_square(), current_turn=turn)
+        draw_board_border(turn)
         draw_pieces()
+        draw_captured_pieces()
         pygame.display.flip()
         clock.tick(60)
 

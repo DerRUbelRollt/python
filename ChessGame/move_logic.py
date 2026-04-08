@@ -74,6 +74,25 @@ def apply_move(board, move):
                 board[0][0] = ""
                 board[0][3] = "bR"
 
+def check_promotion(board, to_row, to_col):
+    """
+    Prüft, ob ein Bauer am letzten Feld ist und promotiert werden muss.
+    Gibt (True, farbe) zurück, wenn Promotion nötig ist, sonst (False, None).
+    """
+    piece = board[to_row][to_col]
+    if piece and piece[1] == "P":
+        if (piece[0] == "w" and to_row == 0) or (piece[0] == "b" and to_row == 7):
+            return True, piece[0]
+    return False, None
+
+def promote_pawn(board, to_row, to_col, promotion_piece):
+    """
+    Wandelt einen Bauer in die ausgewählte Figur um.
+    promotion_piece: "Q", "R", "N" oder "B"
+    """
+    color = board[to_row][to_col][0]
+    board[to_row][to_col] = color + promotion_piece
+
 
 def get_valid_moves(piece, board, row, col):
     
@@ -95,10 +114,7 @@ def get_valid_moves(piece, board, row, col):
             if (color == "w" and row == 6) or (color == "b" and row == 1):
                 if board[row + 2*direction][col] == "":
                     moves.append((row + 2*direction, col))
-        if (color == "w" and row == 0): 
-            board[row][col] = "wQ"
-        if (color == "b" and row == 7):
-            board[row][col] = "bQ"
+        # Promotion wird nach dem Zug separat gehandhabt (siehe main.py)
         # Schlagen
         for dc in [-1, 1]:
             new_col = col + dc
