@@ -1,12 +1,12 @@
 # bot_master.py
+import os, platform
 from stockfish import Stockfish
-import os
 
-# Engine starten
-stockfish = Stockfish(
-    path=os.path.join("engines", "stockfish"),  # Pfad anpassen
-    depth=20  # Tiefe für Master-Level
-)
+exe_name = "stockfish-windows-x86-64-avx2.exe" if platform.system() == "Windows" else "stockfish"
+engine_path = os.path.join("engines", exe_name)
+
+stockfish = Stockfish(path=engine_path, depth=20)
+
 stockfish.set_skill_level(20)  # 0-20 (Master = 20)
 
 def board_to_fen(board, current_player):
