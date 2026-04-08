@@ -1,6 +1,5 @@
 import socket
 import pickle
-import threading
 import queue
 
 # Gemeinsame Queue für eingehende Moves

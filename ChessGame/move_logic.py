@@ -1,6 +1,12 @@
 from copy import deepcopy
 from utils_functions import is_king_in_check  # Das brauchst du noch, siehe unten
 
+rochade_valid_w = 0
+rochade_valid_b = 0
+
+def get_rochade_valid(color):
+    return rochade_valid_w if color == "w" else rochade_valid_b
+
 
 def get_legal_moves(piece, board, row, col, color):
     valid_moves = get_valid_moves(piece, board, row, col)
@@ -42,10 +48,31 @@ def apply_move(board, move):
     Wendet einen Zug auf dem Board an.
     move: ((from_row, from_col), (to_row, to_col))
     """
+    global rochade_valid_w, rochade_valid_b
     (from_row, from_col), (to_row, to_col) = move
     piece = board[from_row][from_col]
     board[to_row][to_col] = piece
     board[from_row][from_col] = ""
+
+    # Rochade handhaben
+    if piece[1].upper() == "K":
+        color = piece[0]
+        if color == "w" and from_row == 7 and from_col == 4:
+            rochade_valid_w = 1
+            if to_col == 6:  # Kurze Rochade
+                board[7][7] = ""
+                board[7][5] = "wR"
+            elif to_col == 2:  # Lange Rochade
+                board[7][0] = ""
+                board[7][3] = "wR"
+        elif color == "b" and from_row == 0 and from_col == 4:
+            rochade_valid_b = 1
+            if to_col == 6:  # Kurze Rochade
+                board[0][7] = ""
+                board[0][5] = "bR"
+            elif to_col == 2:  # Lange Rochade
+                board[0][0] = ""
+                board[0][3] = "bR"
 
 
 def get_valid_moves(piece, board, row, col):
@@ -147,7 +174,6 @@ def get_valid_moves(piece, board, row, col):
                         break
 
     elif name == "K":  # König
-        from gameLogic import get_rochade_valid
         # Normale Königszüge
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:

@@ -1,9 +1,7 @@
 import pygame
 import sys
 import threading
-from network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves
-
-from network import receive_move, send_move
+from Network.network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves
 from board import board as start_board, load_images
 from gameLogic import handle_click, get_selected_square
 from bots import get_bot_b_move
@@ -12,6 +10,7 @@ from utils_functions import is_king_in_check, insufficient_material
 from main_menu import main_menu
 from bot_master import get_bot_e_move
 from lose_win_screen import show_game_over_screen
+from move_logic import apply_move
 
 # Pygame initialisieren
 pygame.font.init()
@@ -150,35 +149,36 @@ while game:
 
         # --- Multiplayer-Logik ---
         if mode in ("host", "client"):
-            my_color = player_color  # Farbe, die dieser Client spielt
-            # Wenn ich dran bin -> Eingaben erlauben
+            my_color = player_color
+
+            # 🧠 1. Gegner-Züge IMMER zuerst verarbeiten (nicht blockierend!)
+            while not incoming_moves.empty():
+                move = incoming_moves.get()
+
+                print("[NETWORK] Gegnerzug:", move)
+
+                apply_move(board, move)
+
+                turn = "black" if turn == "white" else "white"
+
+            # 🧠 2. Nur wenn ich dran bin → Eingabe erlauben
             if turn == my_color:
                 for event in events:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_pos = pygame.mouse.get_pos()
                         move = handle_click(mouse_pos, board, turn)
+
                         if move:
-                            # move erwartet ((from_row, from_col), (to_row, to_col))
-                            (fr, fc), (tr, tc) = move
-                            # Lokale Anwendung des Zugs
-                            board[tr][tc] = board[fr][fc]
-                            board[fr][fc] = ""
-                            # Senden des Moves an Gegner
+                            print("[NETWORK] Sende Zug:", move)
+
+                            # Lokalen Zug anwenden
+                            apply_move(board, move)
+
+                            # Senden
                             send_move(network_socket, move)
-                            # Zugwechsel
+
+                            # Zug wechseln
                             turn = "black" if turn == "white" else "white"
-            else:
-                # Nicht mein Zug -> auf Move vom Gegner warten (blockiert hier)
-                move = receive_move(network_socket)
-                if move is None:
-                    # Verbindung verloren / keine Daten
-                    print("[NETWORK] Verbindung wurde getrennt oder Fehler beim Empfangen.")
-                    running = False
-                    break
-                (fr, fc), (tr, tc) = move
-                board[tr][tc] = board[fr][fc]
-                board[fr][fc] = ""
-                turn = "black" if turn == "white" else "white"
 
         # --- Lokale/ Bot-Logik (kein Netzwerk) ---
         else:
@@ -186,16 +186,15 @@ while game:
             for event in events:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
-                    move_made = handle_click(mouse_pos, board, turn)
-                    if move_made:
+                    move = handle_click(mouse_pos, board, turn)
+                    if move:
+                        apply_move(board, move)
                         draw_board(get_selected_square(), current_turn=turn)
                         draw_pieces()
                         pygame.display.flip()
                         pygame.time.delay(700)
                         
-                        # Falls move_made ist True, handle_click hat intern das Board geändert
-                        # (Wenn deine handle_click nur markiert, dann du musst selbst anwenden)
-                        # Wir hier setzen turn um und evtl. Botzüge ausführen
+                        # Zug wechseln
                         turn = "black" if turn == "white" else "white"
 
                         # Bot-Logic: wenn Bot-Spiel aktiv und Bot ist dran (schwarz)
