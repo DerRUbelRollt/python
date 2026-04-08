@@ -1,10 +1,16 @@
 import pygame
 import os
+import sys
 
 image_size = 100     # Größe der Figur
 tile_size = 100      # Größe eines Schachbrettfeldes
 offset = 0           # Offset für die Positionierung der Figuren (falls benötigt)
 
+# Pfad für gebündelte EXE anpassen
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(__file__)
 
 # 8x8 Startposition des Schachbretts ("" = leer)
 board = [
@@ -24,7 +30,7 @@ def load_images():
               "bP", "bR", "bN", "bB", "bQ", "bK"]
     images = {}
     for piece in pieces:
-        path = os.path.join("images", f"{piece}.png")
+        path = os.path.join(base_path, "images", f"{piece}.png")
         image = pygame.image.load(path)
         images[piece] = pygame.transform.scale(image, (image_size, image_size))
     return images
