@@ -2,7 +2,7 @@
 import os, platform
 from stockfish import Stockfish
 
-exe_name = "stockfish-windows-x86-64-avx2.exe" if platform.system() == "Windows" else "stockfish"
+exe_name = "stockfish-windows-x86-64-avx2.exe" if platform.system() == "Windows" else "/usr/local/bin/stockfish"  # Oder dein tatsächlicher Pfad
 engine_path = os.path.join("engines", exe_name)
 
 stockfish = Stockfish(path=engine_path, depth=20)

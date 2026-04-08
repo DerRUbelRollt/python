@@ -8,7 +8,6 @@ from bots import get_bot_b_move
 from move_logic import get_legal_moves
 from utils_functions import is_king_in_check, insufficient_material
 from main_menu import main_menu
-from bot_master import get_bot_e_move
 from lose_win_screen import show_game_over_screen
 from move_logic import apply_move
 
@@ -116,7 +115,7 @@ while game:
     board = [row[:] for row in start_board]
     # Zeige Menü und erhalte Modus
     last_game_surface = screen.copy()
-    is_bot_b_game, is_bot_e_game, menu_result = main_menu(screen, last_game_surface)
+    is_bot_game, menu_result = main_menu(screen, last_game_surface)
 
     # Initialwerte
     network_socket = None
@@ -198,7 +197,7 @@ while game:
                         turn = "black" if turn == "white" else "white"
 
                         # Bot-Logic: wenn Bot-Spiel aktiv und Bot ist dran (schwarz)
-                        if turn == "black" and is_bot_b_game:
+                        if turn == "black" and is_bot_game:
                             
                             move = get_bot_b_move(board, "black")
                             if move:
@@ -206,9 +205,6 @@ while game:
                                 board[tr][tc] = board[fr][fc]
                                 board[fr][fc] = ""
                                 turn = "white"
-                        if turn == "black" and is_bot_e_game:
-                            move = get_bot_e_move(board, "black")
-                            if move:
                                 (fr, fc), (tr, tc) = move
                                 board[tr][tc] = board[fr][fc]
                                 board[fr][fc] = ""

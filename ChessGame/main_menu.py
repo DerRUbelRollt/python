@@ -197,8 +197,7 @@ def main_menu(screen, background):
     multiplayer_button = pygame.Rect(250, 200, 300, 60)
     start_button = pygame.Rect(250, 300, 300, 60)
     bot_button_b = pygame.Rect(250, 400, 300, 60)
-    bot_button_e = pygame.Rect(250, 500, 300, 60)
-    quit_button = pygame.Rect(250, 600, 300, 60)
+    quit_button = pygame.Rect(250, 500, 300, 60)
 
     while True:
         # Hintergrund: letztes Spielfeld
@@ -217,15 +216,13 @@ def main_menu(screen, background):
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.collidepoint(mouse_pos):
-                    return False, False, "white"
+                    return False, "white"
                 elif bot_button_b.collidepoint(mouse_pos):
-                    return True, False, "white"
-                elif bot_button_e.collidepoint(mouse_pos):
-                    return False, True, "white"
+                    return True, "white"
                 elif multiplayer_button.collidepoint(mouse_pos):
                     result = multiplayer_menu(screen, background)
                     if result:
-                        return False, False, result
+                        return False, result
                 elif quit_button.collidepoint(mouse_pos):
                     pygame.quit()
                     sys.exit()
@@ -245,7 +242,6 @@ def main_menu(screen, background):
         draw_button(multiplayer_button, "Multiplayer", (100, 100, 255), (70, 70, 200))
         draw_button(start_button, "Lokal 2 Player", (100, 100, 255), (70, 70, 200))
         draw_button(bot_button_b, "KI  BEGINNER", (100, 255, 100), (70, 200, 70))
-        draw_button(bot_button_e, "KI  EXPERT", (100, 255, 100), (70, 200, 70))
         draw_button(quit_button, "Beenden", (255, 100, 100), (200, 70, 70))
 
         pygame.display.flip()
