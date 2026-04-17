@@ -1,17 +1,27 @@
 # Merkt sich, ob eine Figur ausgewählt wurde
 selected_square = None
 from move_logic import get_legal_moves, apply_move
+from board import flip_coordinates
 
 tile_size = 100
 board_offset_x = 200
 
-def handle_click(pos, board, current_player):
+def handle_click(pos, board, current_player, player_perspective="white"):
+    """
+    Verarbeitet Klicks auf das Board.
+    player_perspective kann "white" oder "black" sein und bestimmt, 
+    ob die Koordinaten umgekehrt werden.
+    """
     global selected_square
     col = (pos[0] - board_offset_x) // tile_size 
     row = pos[1] // tile_size
 
     if col < 0 or col > 7 or row < 0 or row > 7:
         return None  # Klick außerhalb des Boards
+
+    # Wenn von schwarzer Perspektive gespielt wird, Koordinaten konvertieren
+    if player_perspective == "black":
+        row, col = flip_coordinates(row, col)
 
     # Falls noch keine Figur ausgewählt
     if selected_square is None:

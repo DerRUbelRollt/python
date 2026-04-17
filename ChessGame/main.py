@@ -2,7 +2,7 @@ import pygame
 import sys
 import threading
 from Network.network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves
-from board import board as start_board, load_images
+from board import board as start_board, load_images, get_display_board
 from gameLogic import handle_click, get_selected_square
 from bots import get_bot_b_move, get_bot_a_move
 from move_logic import get_legal_moves, apply_move, check_promotion, promote_pawn
@@ -71,12 +71,20 @@ def main_game(is_host, server_ip=None):
 
     conn.close()
 
-def draw_board(selected_square=None, current_turn="white"):
+def draw_board(selected_square=None, current_turn="white", display_board=None):
+    """
+    Zeichnet das Schachbrett.
+    display_board: Das Board das angezeigt werden soll (kann eine gedrehte Variante sein)
+    Falls None, wird das globale board verwendet.
+    """
+    if display_board is None:
+        display_board = board
+        
     valid_moves = []
 
     if selected_square:
         row, col = selected_square
-        piece = board[row][col]
+        piece = display_board[row][col]
         if piece:  # Nur wenn eine Figur vorhanden ist
             valid_moves = get_legal_moves(piece, board, row, col, current_turn)
 
@@ -93,10 +101,18 @@ def draw_board(selected_square=None, current_turn="white"):
                 highlight_surface.fill(highlight_color)
                 screen.blit(highlight_surface, (board_offset_x + c * tile_size, r * tile_size))
 
-def draw_pieces():
+def draw_pieces(display_board=None):
+    """
+    Zeichnet die Figuren auf das Board.
+    display_board: Das Board das angezeigt werden soll (kann eine gedrehte Variante sein)
+    Falls None, wird das globale board verwendet.
+    """
+    if display_board is None:
+        display_board = board
+        
     for r in range(8):
         for c in range(8):
-            piece = board[r][c]
+            piece = display_board[r][c]
             if piece != "":
                 screen.blit(piece_images[piece], (board_offset_x + c * tile_size, r * tile_size))
 
@@ -264,6 +280,7 @@ while game:
         # --- Multiplayer-Logik ---
         if mode in ("host", "client"):
             my_color = player_color
+            display_board = get_display_board(board, player_color)
 
             # 🧠 1. Gegner-Züge IMMER zuerst verarbeiten (nicht blockierend!)
             while not incoming_moves.empty():
@@ -296,7 +313,7 @@ while game:
                 for event in events:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_pos = pygame.mouse.get_pos()
-                        move = handle_click(mouse_pos, board, turn)
+                        move = handle_click(mouse_pos, board, turn, player_perspective=player_color)
 
                         if move:
                             print("[NETWORK] Sende Zug:", move)
@@ -387,9 +404,20 @@ while game:
                                 turn = "white"
                 
         # Drawing
-        draw_board(get_selected_square(), current_turn=turn)
+        if mode in ("host", "client"):
+            display_board = get_display_board(board, player_color)
+            draw_board(get_selected_square(), current_turn=turn, display_board=display_board)
+        else:
+            draw_board(get_selected_square(), current_turn=turn)
+        
         draw_board_border(turn)
-        draw_pieces()
+        
+        if mode in ("host", "client"):
+            display_board = get_display_board(board, player_color)
+            draw_pieces(display_board)
+        else:
+            draw_pieces()
+            
         draw_captured_pieces()
         pygame.display.flip()
         clock.tick(60)

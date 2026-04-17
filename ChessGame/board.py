@@ -24,6 +24,17 @@ board = [
     ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
 ]
 
+board_black = [
+    ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
+    ["wP"] * 8,
+    [""] * 8,
+    [""] * 8,
+    [""] * 8,
+    [""] * 8,
+    ["bP"] * 8,
+    ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"]
+]
+
 # Bilder laden und auf image_size skalieren
 def load_images():
     pieces = ["wP", "wR", "wN", "wB", "wQ", "wK",
@@ -44,3 +55,31 @@ def draw_pieces(screen, board, images):
                 x = col * tile_size + offset
                 y = row * tile_size + offset
                 screen.blit(images[piece], (x, y))
+
+# Board für die Anzeige drehen (180 Grad Rotation)
+def flip_board(board):
+    """
+    Dreht das Board um 180 Grad für die schwarze Perspektive.
+    Das erste Element wird zum letzten, invertierte Reihen und Spalten.
+    """
+    flipped = [[board[7-row][7-col] for col in range(8)] for row in range(8)]
+    return flipped
+
+# Koordinaten zwischen normaler und gedrehter Perspektive konvertieren
+def flip_coordinates(row, col):
+    """
+    Konvertiert Koordinaten zwischen normaler (weiß) und gedrehter (schwarz) Perspektive.
+    Von (row, col) wird zu (7-row, 7-col).
+    """
+    return (7 - row, 7 - col)
+
+# Das richtige Board je nach Spielerperspektive zurückgeben
+def get_display_board(board, player_color):
+    """
+    Gibt das Board aus der Perspektive des Spielers zurück.
+    Wenn player_color == "black", wird das Board gedreht.
+    Wenn player_color == "white" oder None, wird das normale Board zurückgegeben.
+    """
+    if player_color == "black":
+        return flip_board(board)
+    return board
