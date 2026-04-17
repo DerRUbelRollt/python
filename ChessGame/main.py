@@ -136,12 +136,16 @@ def draw_captured_pieces():
     right_x = WIDTH - 50 - small_size
     y_start = 50
 
-    for i, piece in enumerate(captured_white):
+    # Stelle sicher, dass links immer schwarze Figuren und rechts immer weiße Figuren stehen.
+    black_captured = [p for p in captured_white + captured_black if p.startswith('b')]
+    white_captured = [p for p in captured_white + captured_black if p.startswith('w')]
+
+    for i, piece in enumerate(black_captured):
         if piece in piece_images:
             img = pygame.transform.scale(piece_images[piece], (small_size, small_size))
             screen.blit(img, (left_x, y_start + i * (small_size + 10)))
 
-    for i, piece in enumerate(captured_black):
+    for i, piece in enumerate(white_captured):
         if piece in piece_images:
             img = pygame.transform.scale(piece_images[piece], (small_size, small_size))
             screen.blit(img, (right_x, y_start + i * (small_size + 10)))
