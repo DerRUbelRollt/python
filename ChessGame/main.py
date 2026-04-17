@@ -2,7 +2,7 @@ import pygame
 import sys
 import threading
 from Network.network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves
-from board import board as start_board, load_images, get_display_board
+from board import board as start_board, load_images, get_display_board, flip_coordinates
 from gameLogic import handle_click, get_selected_square
 from bots import get_bot_b_move, get_bot_a_move
 from move_logic import get_legal_moves, apply_move, check_promotion, promote_pawn
@@ -71,27 +71,36 @@ def main_game(is_host, server_ip=None):
 
     conn.close()
 
-def draw_board(selected_square=None, current_turn="white", display_board=None):
+def draw_board(selected_square=None, current_turn="white", display_board=None, player_perspective="white"):
     """
     Zeichnet das Schachbrett.
     display_board: Das Board das angezeigt werden soll (kann eine gedrehte Variante sein)
     Falls None, wird das globale board verwendet.
+    player_perspective: "white" oder "black" für die Anzeige/Highlight-Logik.
     """
     if display_board is None:
         display_board = board
         
     valid_moves = []
+    display_selected = None
 
     if selected_square:
-        row, col = selected_square
+        if player_perspective == "black":
+            display_selected = flip_coordinates(*selected_square)
+        else:
+            display_selected = selected_square
+
+        row, col = display_selected
         piece = display_board[row][col]
         if piece:  # Nur wenn eine Figur vorhanden ist
-            valid_moves = get_legal_moves(piece, board, row, col, current_turn)
+            valid_moves = get_legal_moves(piece, board, selected_square[0], selected_square[1], current_turn)
+            if player_perspective == "black":
+                valid_moves = [flip_coordinates(r, c) for r, c in valid_moves]
 
     for r in range(8):
         for c in range(8):
             color = WHITE if (r + c) % 2 == 0 else GRAY
-            if selected_square == (r, c):
+            if display_selected == (r, c):
                 color = Dark_Gray
             pygame.draw.rect(screen, color, (board_offset_x + c * tile_size, r * tile_size, tile_size, tile_size))
 
@@ -406,7 +415,7 @@ while game:
         # Drawing
         if mode in ("host", "client"):
             display_board = get_display_board(board, player_color)
-            draw_board(get_selected_square(), current_turn=turn, display_board=display_board)
+            draw_board(get_selected_square(), current_turn=turn, display_board=display_board, player_perspective=player_color)
         else:
             draw_board(get_selected_square(), current_turn=turn)
         
