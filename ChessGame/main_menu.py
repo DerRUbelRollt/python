@@ -195,7 +195,7 @@ def find_game_screen(screen, background):
                     host_ip, port = found_hosts[selected_index]
                     try:
                         sock = connect_to_server(host_ip, int(port))
-                        return {"mode": "client", "socket": sock, "color": "black"}
+                        return {"mode": "client", "socket": sock, "color": "black", "server_ip": host_ip}
                     except Exception as e:
                         print(f"Connection error: {e}")
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -208,7 +208,7 @@ def find_game_screen(screen, background):
                         selected_index = i
                         try:
                             sock = connect_to_server(ip, int(port))
-                            return {"mode": "client", "socket": sock, "color": "black"}
+                            return {"mode": "client", "socket": sock, "color": "black", "server_ip": ip}
                         except Exception as e:
                             print(f"Connection error: {e}")
 
