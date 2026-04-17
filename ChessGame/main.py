@@ -1,8 +1,7 @@
 import pygame
 import sys
 import threading
-import time
-from Network.network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves, is_connection_alive
+from Network.network_thread import start_server, connect_to_server, send_move, listen_for_moves, incoming_moves
 from board import board as start_board, load_images, get_display_board, flip_coordinates
 from gameLogic import handle_click, get_selected_square
 from bots import get_bot_b_move, get_bot_a_move
@@ -32,26 +31,6 @@ piece_images = load_images()
 # Geschlagene Figuren
 captured_white = []
 captured_black = []
-
-# Disconnect-Status für Multiplayer
-disconnect_time = None
-reconnect_countdown = 60  # 60 Sekunden Wartezeit
-is_disconnected = False
-waiting_for_reconnect = False
-
-def try_reconnect_to_server(server_ip, port=5005, max_attempts=5):
-    """Versucht, sich wieder mit dem Server zu verbinden"""
-    for attempt in range(max_attempts):
-        try:
-            print(f"[RECONNECT] Versuch {attempt + 1}/{max_attempts}...")
-            sock = connect_to_server(server_ip, port)
-            print("[RECONNECT] Erfolgreich wieder verbunden!")
-            return sock
-        except Exception as e:
-            print(f"[RECONNECT] Versuch {attempt + 1} fehlgeschlagen: {e}")
-            time.sleep(1)
-    print("[RECONNECT] Alle Versuche fehlgeschlagen.")
-    return None
 
 
 
@@ -278,12 +257,6 @@ while game:
     board = [row[:] for row in start_board]
     captured_white = []
     captured_black = []
-    
-    # Reset Disconnect-Status
-    disconnect_time = None
-    is_disconnected = False
-    waiting_for_reconnect = False
-    
     # Zeige Menü und erhalte Modus
     last_game_surface = screen.copy()
     is_bot_game, bot_type, menu_result = main_menu(screen, last_game_surface)
@@ -292,7 +265,6 @@ while game:
     network_socket = None
     player_color = None   # Farbe des lokalen Spielers: "white"/"black" oder None
     turn = "white"        # wer ist gerade dran (weiß beginnt)
-    server_ip = None      # IP-Adresse für Reconnect
 
     # menu_result kann sein: "white" (lokal), oder dict {"mode":..., "socket":..., "color":...}
     if isinstance(menu_result, dict):
@@ -300,7 +272,6 @@ while game:
         mode = menu_result.get("mode")
         network_socket = menu_result.get("socket")
         player_color = menu_result.get("color")  # z.B. "white" für Host, "black" für Client
-        server_ip = menu_result.get("server_ip")  # Speichere IP für Reconnect
         # Im Multiplayer beginnt immer Weiß (Host) — turn bleibt "white"
         threading.Thread(target=listen_for_moves, args=(network_socket,), daemon=True).start()
     else:
@@ -324,40 +295,33 @@ while game:
                 back_button_rect = pygame.Rect(10, 10, 80, 40)
                 if back_button_rect.collidepoint(mouse_pos):
                     # Zurück zum Menü - Netzwerkverbindung schließen falls vorhanden
-                    if network_socket and not waiting_for_reconnect:
-                        if mode == "host":
-                            # Host verlässt Spiel - starte Wartezeit für Client
-                            waiting_for_reconnect = True
-                            disconnect_time = time.time()
-                            print("[DISCONNECT] Host hat das Spiel verlassen. Warte auf Reconnect...")
-                        else:
-                            # Client verlässt Spiel - schließe Verbindung sofort
-                            network_socket.close()
-                    elif waiting_for_reconnect:
-                        # Während Wartezeit: Verbindung schließen und zurück zum Menü
-                        if network_socket:
-                            network_socket.close()
-                        running = False
-                        continue
-                    else:
-                        running = False
-                        continue
+                    if network_socket:
+                        # Sende eine spezielle "GAME_END" Nachricht an den anderen Spieler
+                        try:
+                            send_move(network_socket, "GAME_END")
+                        except:
+                            pass  # Ignoriere Fehler beim Senden
+                        network_socket.close()
+                        # Threads werden automatisch beendet da daemon=True
+                    running = False
+                    continue
 
         # --- Multiplayer-Logik ---
-        if mode in ("host", "client") and not waiting_for_reconnect:
+        if mode in ("host", "client"):
             my_color = player_color
             display_board = get_display_board(board, player_color)
-
-            # Prüfe auf Disconnect
-            if not is_connection_alive(network_socket):
-                if not is_disconnected:
-                    is_disconnected = True
-                    disconnect_time = time.time()
-                    print("[DISCONNECT] Verbindung unterbrochen!")
 
             # 🧠 1. Gegner-Züge IMMER zuerst verarbeiten (nicht blockierend!)
             while not incoming_moves.empty():
                 move = incoming_moves.get()
+
+                # Prüfe auf spezielle GAME_END Nachricht
+                if move == "GAME_END":
+                    print("[NETWORK] Gegner hat das Spiel verlassen. Zurück zum Menü.")
+                    if network_socket:
+                        network_socket.close()
+                    running = False
+                    continue
 
                 print("[NETWORK] Gegnerzug:", move)
 
@@ -381,35 +345,8 @@ while game:
 
                 turn = "black" if turn == "white" else "white"
 
-            # 🧠 2. Reconnect-Logik falls disconnected
-            if is_disconnected and mode == "client" and server_ip:
-                print("[RECONNECT] Versuche Reconnect...")
-                new_socket = try_reconnect_to_server(server_ip)
-                if new_socket:
-                    network_socket = new_socket
-                    is_disconnected = False
-                    disconnect_time = None
-                    # Starte neuen Listen-Thread
-                    threading.Thread(target=listen_for_moves, args=(network_socket,), daemon=True).start()
-                    print("[RECONNECT] Erfolgreich wieder verbunden!")
-                else:
-                    print("[RECONNECT] Reconnect fehlgeschlagen.")
-
-            # 🧠 3. Wartezeit-Logik für Host
-            if waiting_for_reconnect and mode == "host":
-                elapsed = time.time() - disconnect_time
-                remaining = max(0, reconnect_countdown - elapsed)
-                
-                if remaining <= 0:
-                    # Wartezeit abgelaufen - Verbindung schließen
-                    print("[DISCONNECT] Wartezeit abgelaufen. Verbindung wird geschlossen.")
-                    if network_socket:
-                        network_socket.close()
-                    running = False
-                    continue
-
-            # 🧠 4. Nur wenn ich dran bin → Eingabe erlauben (und nicht disconnected)
-            if turn == my_color and not is_disconnected and not waiting_for_reconnect:
+            # 🧠 2. Nur wenn ich dran bin → Eingabe erlauben
+            if turn == my_color:
                 for event in events:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_pos = pygame.mouse.get_pos()
@@ -519,36 +456,8 @@ while game:
             draw_pieces()
             
         draw_captured_pieces()
-                # Zeichne Disconnect-Overlay falls nötig
-        if waiting_for_reconnect and mode == "host":
-            # Grauer Schleier
-            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            overlay.fill((100, 100, 100, 150))  # Leichter grauer Schleier
-            screen.blit(overlay, (0, 0))
-            
-            # Countdown-Text
-            elapsed = time.time() - disconnect_time
-            remaining = max(0, reconnect_countdown - elapsed)
-            font_large = pygame.font.SysFont(None, 80)
-            font_small = pygame.font.SysFont(None, 40)
-            
-            countdown_text = font_large.render(f"{int(remaining)}", True, (255, 255, 255))
-            info_text = font_small.render("Warte auf Reconnect...", True, (255, 255, 255))
-            
-            # Zentriere Texte
-            screen.blit(countdown_text, (WIDTH//2 - countdown_text.get_width()//2, HEIGHT//2 - 50))
-            screen.blit(info_text, (WIDTH//2 - info_text.get_width()//2, HEIGHT//2 + 20))
         
-        elif is_disconnected and mode == "client":
-            # Disconnect-Info für Client
-            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            overlay.fill((150, 50, 50, 100))  # Rötlicher Schleier für Disconnect
-            screen.blit(overlay, (0, 0))
-            
-            font = pygame.font.SysFont(None, 50)
-            disconnect_text = font.render("Verbindung unterbrochen - Reconnect...", True, (255, 255, 255))
-            screen.blit(disconnect_text, (WIDTH//2 - disconnect_text.get_width()//2, HEIGHT//2))
-                # Zeichne Zurück-Button oben links
+        # Zeichne Zurück-Button oben links
         back_button_rect = pygame.Rect(10, 10, 80, 40)
         mouse_pos = pygame.mouse.get_pos()
         button_color = (100, 150, 255) if back_button_rect.collidepoint(mouse_pos) else (70, 100, 200)
@@ -556,7 +465,7 @@ while game:
         pygame.draw.rect(screen, (255, 255, 255), back_button_rect, 2, border_radius=5)
         
         font = pygame.font.SysFont(None, 30)
-        back_text = font.render(" Back", True, (255, 255, 255))
+        back_text = font.render("← Back", True, (255, 255, 255))
         screen.blit(back_text, (back_button_rect.x + 5, back_button_rect.y + 8))
         
         pygame.display.flip()

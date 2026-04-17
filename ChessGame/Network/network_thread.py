@@ -23,27 +23,8 @@ def connect_to_server(server_ip, port=5005):
 def send_move(sock, move):
     try:
         sock.send(pickle.dumps(move))
-        return True
     except Exception as e:
         print(f"[NETZWERK] Fehler beim Senden: {e}")
-        return False
-
-def is_connection_alive(sock):
-    """Testet ob die Verbindung noch aktiv ist"""
-    try:
-        # Setze Socket auf non-blocking für den Test
-        sock.setblocking(False)
-        # Versuche ein kleines Test-Byte zu senden
-        sock.send(b'\x00')
-        return True
-    except:
-        return False
-    finally:
-        # Setze Socket zurück auf blocking
-        try:
-            sock.setblocking(True)
-        except:
-            pass
 
 def listen_for_moves(sock):
     """ Läuft in eigenem Thread, speichert Moves in Queue """
